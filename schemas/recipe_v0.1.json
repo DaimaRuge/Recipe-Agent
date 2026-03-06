@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recipe-agent.com/schemas/recipe_v0.1.json",
+  "title": "Recipe",
+  "description": "A structured recipe object for Recipe Agent",
+  "type": "object",
+  "required": [
+    "recipe_id",
+    "title",
+    "description",
+    "ingredients",
+    "steps",
+    "nutrition"
+  ],
+  "properties": {
+    "recipe_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the recipe"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Recipe title"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "description": "Brief description of the recipe"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["easy", "medium", "hard"],
+      "default": "medium",
+      "description": "Difficulty level"
+    },
+    "prep_time": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Preparation time in minutes"
+    },
+    "cook_time": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Cooking time in minutes"
+    },
+    "total_time": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total time in minutes (prep + cook)"
+    },
+    "servings": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "default": 4,
+      "description": "Number of servings"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for categorization"
+    },
+    "cuisine": {
+      "type": "string",
+      "description": "Cuisine type (e.g., Chinese, Italian, French)"
+    },
+    "ingredients": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/ingredient"
+      },
+      "description": "List of ingredients"
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/step"
+      },
+      "description": "List of cooking steps"
+    },
+    "nutrition": {
+      "$ref": "#/$defs/nutrition",
+      "description": "Nutritional information"
+    },
+    "equipment": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Required equipment"
+    },
+    "tips": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional tips and notes"
+    },
+    "variations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Variations of the recipe"
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of the recipe (URL or reference)"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author of the recipe"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata",
+      "description": "Metadata"
+    }
+  },
+  "$defs": {
+    "ingredient": {
+      "type": "object",
+      "required": ["name", "quantity", "unit"],
+      "properties": {
+        "ingredient_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the ingredient"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Ingredient name"
+        },
+        "quantity": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Quantity"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement (g, ml, piece, etc.)"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes (e.g., 'chopped', 'at room temperature')"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the ingredient is optional"
+        },
+        "substitutes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Possible substitutes"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["order", "description"],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the step"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Step order"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Step description"
+        },
+        "duration": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Estimated duration in minutes"
+        },
+        "tips": {
+          "type": "string",
+          "description": "Tips for this step"
+        },
+        "image_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional image URL"
+        }
+      }
+    },
+    "nutrition": {
+      "type": "object",
+      "required": ["calories", "protein", "fat", "carbohydrates"],
+      "properties": {
+        "calories": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Calories per serving (kcal)"
+        },
+        "protein": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Protein per serving (g)"
+        },
+        "fat": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Fat per serving (g)"
+        },
+        "carbohydrates": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Carbohydrates per serving (g)"
+        },
+        "fiber": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Dietary fiber per serving (g)"
+        },
+        "sugar": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sugar per serving (g)"
+        },
+        "sodium": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sodium per serving (mg)"
+        },
+        "cholesterol": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Cholesterol per serving (mg)"
+        },
+        "vitamins": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Vitamin content"
+        },
+        "minerals": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Mineral content"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        },
+        "version": {
+          "type": "string",
+          "description": "Schema version"
+        },
+        "source_type": {
+          "type": "string",
+          "enum": ["text", "image", "video", "audio"],
+          "description": "Source type that generated this recipe"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score for AI-generated recipes"
+        }
+      }
+    }
+  }
+}
