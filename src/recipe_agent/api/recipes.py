@@ -5,6 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from recipe_agent.core.llm import LLMConfig
 from recipe_agent.models.recipe import Recipe
 from recipe_agent.models.user import UserPreference
 from recipe_agent.services.recipe_generator import RecipeGenerator
@@ -12,6 +13,23 @@ from recipe_agent.services.recommendation import RecommendationService
 
 
 router = APIRouter()
+
+
+# TODO: 从配置或环境变量读取
+def get_llm_config() -> Optional[LLMConfig]:
+    """获取 LLM 配置"""
+    import os
+    
+    api_key = os.getenv("LLM_API_KEY")
+    if not api_key:
+        return None
+    
+    return LLMConfig(
+        provider=os.getenv("LLM_PROVIDER", "deepseek"),
+        model=os.getenv("LLM_MODEL", "deepseek-chat"),
+        api_key=api_key,
+        api_base=os.getenv("LLM_API_BASE", "https://api.deepseek.com")
+    )
 
 
 class GenerateRecipeRequest(BaseModel):
@@ -34,9 +52,9 @@ async def generate_recipe(request: GenerateRecipeRequest):
     
     支持自然语言输入，如"番茄炒蛋"、"红烧肉"等
     """
-    generator = RecipeGenerator()
-    
     try:
+        generator = RecipeGenerator(llm_config=get_llm_config())
+        
         recipe = await generator.generate_from_text(
             text=request.text,
             preference=request.preference
@@ -47,10 +65,10 @@ async def generate_recipe(request: GenerateRecipeRequest):
             message=f"已为您生成菜谱：{recipe.title}"
         )
     
-    except NotImplementedError:
+    except ValueError as e:
         raise HTTPException(
-            status_code=501,
-            detail="功能开发中，敬请期待"
+            status_code=400,
+            detail=str(e)
         )
     except Exception as e:
         raise HTTPException(
@@ -69,9 +87,9 @@ async def get_recommendations(
     
     基于用户偏好、季节、历史记录等因素推荐菜谱
     """
-    service = RecommendationService()
-    
     try:
+        service = RecommendationService(llm_config=get_llm_config())
+        
         # TODO: 从数据库获取用户偏好
         preference = UserPreference()
         
@@ -83,11 +101,6 @@ async def get_recommendations(
         
         return recipes
     
-    except NotImplementedError:
-        raise HTTPException(
-            status_code=501,
-            detail="功能开发中，敬请期待"
-        )
     except Exception as e:
         raise HTTPException(
             status_code=500,

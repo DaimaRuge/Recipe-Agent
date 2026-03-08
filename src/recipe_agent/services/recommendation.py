@@ -6,6 +6,8 @@
 from datetime import datetime
 from typing import Optional
 
+from recipe_agent.core.llm import LLMConfig, LLMAdapter, create_llm_adapter
+from recipe_agent.core.prompts import RecipePrompts
 from recipe_agent.models.recipe import Recipe
 from recipe_agent.models.user import UserPreference
 
@@ -16,10 +18,24 @@ class RecommendationService:
     负责根据用户偏好推荐菜谱
     """
     
-    def __init__(self):
-        """初始化推荐服务"""
-        # TODO: 接入向量数据库进行相似度搜索
-        pass
+    def __init__(self, llm_config: Optional[LLMConfig] = None):
+        """初始化推荐服务
+        
+        Args:
+            llm_config: LLM 配置（可选）
+        """
+        if llm_config:
+            self.llm: LLMAdapter = create_llm_adapter(llm_config)
+        else:
+            # 使用 Mock 适配器
+            mock_config = LLMConfig(
+                provider="mock",
+                model="deepseek-chat",
+                api_key="mock"
+            )
+            self.llm = create_llm_adapter(mock_config)
+        
+        self.prompts = RecipePrompts()
     
     async def get_daily_recommendations(
         self,
@@ -37,14 +53,45 @@ class RecommendationService:
         Returns:
             推荐菜谱列表
         """
-        # TODO: 实现智能推荐算法
-        # 1. 基于用户历史偏好
-        # 2. 考虑季节性食材
-        # 3. 考虑烹饪时间和技能
-        # 4. 排除不喜欢的食材
-        # 5. 多样性保证
+        # 使用 LLM 生成推荐
+        system_prompt = self.prompts.get_system_prompt()
+        user_prompt = self.prompts.get_recommendation_prompt(preference, season, count)
         
-        raise NotImplementedError("待实现推荐算法")
+        try:
+            result = await self.llm.generate_json(
+                prompt=user_prompt,
+                system_prompt=system_prompt
+            )
+            
+            # 解析返回的菜谱列表
+            if isinstance(result, list):
+                recipes_data = result
+            elif isinstance(result, dict) and "recipes" in result:
+                recipes_data = result["recipes"]
+            else:
+                recipes_data = [result]
+            
+            # 构建简化的 Recipe 对象
+            recipes = []
+            for data in recipes_data[:count]:
+                recipe = Recipe(
+                    title=data.get("title", "未知菜谱"),
+                    description=data.get("description", ""),
+                    tags=data.get("tags", []),
+                    total_time=data.get("total_time"),
+                    # 使用默认值填充必需字段
+                    ingredients=[],
+                    steps=[],
+                    nutrition=Recipe.__fields__["nutrition"].default_factory()
+                )
+                recipes.append(recipe)
+            
+            return recipes
+        
+        except Exception as e:
+            # Fallback: 返回空列表或使用基于规则的推荐
+            print(f"LLM 推荐失败: {e}")
+            return []
     
     def _get_current_season(self) -> str:
         """获取当前季节
